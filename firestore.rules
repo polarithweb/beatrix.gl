@@ -1,0 +1,182 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net: Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Global Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    // 3. Entity Validation Blueprints
+    function isValidListing(data) {
+      return data.keys().hasAll([
+          'title',
+          'game',
+          'category',
+          'price',
+          'sellerId',
+          'sellerName',
+          'verified',
+          'status',
+          'deliveryTime',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'title',
+          'game',
+          'category',
+          'price',
+          'sellerId',
+          'sellerName',
+          'verified',
+          'status',
+          'deliveryTime',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.title is string && data.title.size() >= 3 && data.title.size() <= 120
+        && data.game is string && data.game.size() >= 2 && data.game.size() <= 60
+        && data.category is string && data.category in [
+          'Game Accounts',
+          'Game Coins',
+          'In-Game Currency',
+          'Items & Skins',
+          'Top Up',
+          'Gift Cards',
+          'Game Pal',
+          'Coaching',
+          'Boosting',
+          'Software'
+        ]
+        && data.price is number && data.price > 0 && data.price <= 10000
+        && data.sellerId is string && data.sellerId.size() >= 1 && data.sellerId.size() <= 128 && data.sellerId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.sellerId == request.auth.uid
+        && data.sellerName is string && data.sellerName.size() >= 2 && data.sellerName.size() <= 50
+        && data.verified is bool
+        && data.status is string && data.status in ['active', 'sold']
+        && data.deliveryTime is string && data.deliveryTime.size() >= 2 && data.deliveryTime.size() <= 30
+        && data.createdAt is timestamp
+        && (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll([
+          'listingId',
+          'listingTitle',
+          'game',
+          'price',
+          'buyerId',
+          'sellerId',
+          'status',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'listingId',
+          'listingTitle',
+          'game',
+          'price',
+          'buyerId',
+          'sellerId',
+          'status',
+          'createdAt'
+        ])
+        && data.listingId is string && data.listingId.size() >= 1 && data.listingId.size() <= 128 && data.listingId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.listingTitle is string && data.listingTitle.size() >= 3 && data.listingTitle.size() <= 120
+        && data.game is string && data.game.size() >= 2 && data.game.size() <= 60
+        && data.price is number && data.price > 0 && data.price <= 10000
+        && data.buyerId is string && data.buyerId.size() >= 1 && data.buyerId.size() <= 128 && data.buyerId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.buyerId == request.auth.uid
+        && data.sellerId is string && data.sellerId.size() >= 1 && data.sellerId.size() <= 128 && data.sellerId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.status is string && data.status == 'completed'
+        && data.createdAt is timestamp;
+    }
+
+    // 4. Collection Rules: /listings/{listingId}
+    match /listings/{listingId} {
+      allow get: if isSignedIn()
+        && isValidId(listingId)
+        && (existing().status == 'active' || existing().sellerId == request.auth.uid);
+
+      allow list: if isSignedIn()
+        && (existing().status == 'active' || existing().sellerId == request.auth.uid);
+
+      allow create: if isVerifiedUser()
+        && isValidId(listingId)
+        && isValidListing(incoming())
+        && incoming().verified == true
+        && incoming().status == 'active'
+        && incoming().createdAt == request.time
+        && !('updatedAt' in incoming());
+
+      allow update: if isValidListing(incoming())
+        && isVerifiedUser()
+        && isValidId(listingId)
+        && existing().status != 'sold'
+        && existing().sellerId == request.auth.uid
+        && incoming().sellerId == existing().sellerId
+        && incoming().verified == existing().verified
+        && incoming().createdAt == existing().createdAt
+        && incoming().game == existing().game
+        && incoming().category == existing().category
+        && 'updatedAt' in incoming()
+        && incoming().updatedAt == request.time
+        && (
+          // Action 1: Seller updates title or price on active listing
+          (incoming().status == 'active' && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'price', 'updatedAt'])) ||
+          // Action 2: Seller transitions listing to terminal 'sold' state
+          (incoming().status == 'sold' && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+        );
+
+      allow delete: if isVerifiedUser()
+        && isValidId(listingId)
+        && existing().sellerId == request.auth.uid;
+    }
+
+    // 5. Collection Rules: /orders/{orderId}
+    match /orders/{orderId} {
+      allow get: if isSignedIn()
+        && isValidId(orderId)
+        && (existing().buyerId == request.auth.uid || existing().sellerId == request.auth.uid);
+
+      allow list: if isSignedIn()
+        && (existing().buyerId == request.auth.uid || existing().sellerId == request.auth.uid);
+
+      allow create: if isVerifiedUser()
+        && isValidId(orderId)
+        && isValidOrder(incoming())
+        && incoming().createdAt == request.time
+        && incoming().buyerId != incoming().sellerId
+        && exists(/databases/$(database)/documents/listings/$(incoming().listingId))
+        && get(/databases/$(database)/documents/listings/$(incoming().listingId)).data.status == 'active'
+        && get(/databases/$(database)/documents/listings/$(incoming().listingId)).data.price == incoming().price
+        && get(/databases/$(database)/documents/listings/$(incoming().listingId)).data.sellerId == incoming().sellerId;
+
+      allow update: if false;
+
+      allow delete: if isVerifiedUser()
+        && isValidId(orderId)
+        && (existing().buyerId == request.auth.uid || existing().sellerId == request.auth.uid);
+    }
+  }
+}

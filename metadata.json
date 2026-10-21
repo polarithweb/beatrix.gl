@@ -1,0 +1,6 @@
+{
+  "name": "Beatrix.gl",
+  "description": "Beatrix.gl — Gaming Marketplace for game accounts, in-game currency, items, skins, and gift cards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

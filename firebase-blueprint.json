@@ -1,0 +1,176 @@
+{
+  "entities": {
+    "Listing": {
+      "title": "Listing",
+      "description": "A C2C gaming marketplace item listing posted by a verified seller.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The descriptive title of the gaming listing.",
+          "minLength": 3,
+          "maxLength": 120
+        },
+        "game": {
+          "type": "string",
+          "description": "The name of the game or platform.",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "category": {
+          "type": "string",
+          "description": "The marketplace category of the listing.",
+          "enum": [
+            "Game Accounts",
+            "Game Coins",
+            "In-Game Currency",
+            "Items & Skins",
+            "Top Up",
+            "Gift Cards",
+            "Game Pal",
+            "Coaching",
+            "Boosting",
+            "Software"
+          ]
+        },
+        "price": {
+          "type": "number",
+          "description": "The listing price in USD."
+        },
+        "sellerId": {
+          "type": "string",
+          "description": "The Firebase Auth UID of the seller.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "sellerName": {
+          "type": "string",
+          "description": "The display name or handle of the seller.",
+          "minLength": 2,
+          "maxLength": 50
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "Whether the seller has verified identity status."
+        },
+        "status": {
+          "type": "string",
+          "description": "The lifecycle status of the listing.",
+          "enum": [
+            "active",
+            "sold"
+          ]
+        },
+        "deliveryTime": {
+          "type": "string",
+          "description": "Estimated delivery window for the digital item.",
+          "minLength": 2,
+          "maxLength": 30
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the listing was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the listing was last updated."
+        }
+      },
+      "required": [
+        "title",
+        "game",
+        "category",
+        "price",
+        "sellerId",
+        "sellerName",
+        "verified",
+        "status",
+        "deliveryTime",
+        "createdAt"
+      ]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A purchase order record for a marketplace listing.",
+      "type": "object",
+      "properties": {
+        "listingId": {
+          "type": "string",
+          "description": "The ID of the purchased listing.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "listingTitle": {
+          "type": "string",
+          "description": "Snapshot of the listing title at purchase time.",
+          "minLength": 3,
+          "maxLength": 120
+        },
+        "game": {
+          "type": "string",
+          "description": "Snapshot of the game name at purchase time.",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "price": {
+          "type": "number",
+          "description": "Purchase price in USD."
+        },
+        "buyerId": {
+          "type": "string",
+          "description": "The Firebase Auth UID of the buyer.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "sellerId": {
+          "type": "string",
+          "description": "The Firebase Auth UID of the seller.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "status": {
+          "type": "string",
+          "description": "Order completion status.",
+          "enum": [
+            "completed"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the order was created."
+        }
+      },
+      "required": [
+        "listingId",
+        "listingTitle",
+        "game",
+        "price",
+        "buyerId",
+        "sellerId",
+        "status",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/listings/{listingId}": {
+      "schema": {
+        "$ref": "#/entities/Listing"
+      },
+      "description": "Marketplace product listings posted by sellers."
+    },
+    "/orders/{orderId}": {
+      "schema": {
+        "$ref": "#/entities/Order"
+      },
+      "description": "Purchase order records created by buyers."
+    }
+  }
+}
