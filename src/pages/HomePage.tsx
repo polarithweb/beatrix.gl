@@ -30,11 +30,13 @@ export const HomePage: React.FC = () => {
 
   const [filtersExpanded, setFiltersExpanded] = useState(false);
 
+  const cleanHeroSellLabel = (siteConfig.heroSellCtaText || 'Sell').replace(/^\+\s*/, '');
+
   return (
-    <div className="space-y-8 pb-16 bg-white w-full max-w-[100vw] overflow-x-hidden">
+    <div className="space-y-6 pb-16 bg-white w-full max-w-[100vw] overflow-x-hidden">
       {/* Clean Hero Bar */}
       {siteConfig.showHomeHeroSection && (
-        <section className="bg-white border-b border-sky-100 py-6 sm:py-8">
+        <section className="bg-white border-b border-sky-100 py-5 sm:py-7">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="surface-glass-card rounded-2xl p-5 sm:p-7 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white">
               <div className="space-y-1.5 max-w-2xl">
@@ -49,21 +51,21 @@ export const HomePage: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <div className="flex items-center justify-between gap-2.5 w-full md:w-auto shrink-0">
                 <button
                   onClick={() => navigateTo('marketplace')}
-                  className="btn-glass-light flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold cursor-pointer"
+                  className="btn-glass-light flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer whitespace-nowrap"
                 >
-                  <ShoppingBag className="w-3.5 h-3.5 text-sky-700" />
+                  <ShoppingBag className="w-3.5 h-3.5 text-sky-700 shrink-0" />
                   <span>Browse Marketplace</span>
                 </button>
                 {siteConfig.showHeroSellCta && siteConfig.allowNewListings && (
                   <button
                     onClick={() => navigateTo('dashboard')}
-                    className="btn-glass-primary flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold cursor-pointer"
+                    className="btn-glass-primary flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer whitespace-nowrap"
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>{(siteConfig.heroSellCtaText || 'Sell').replace(/^\+\s*/, '')}</span>
+                    <Plus className="w-3.5 h-3.5 shrink-0" />
+                    <span>{cleanHeroSellLabel}</span>
                   </button>
                 )}
               </div>
@@ -72,72 +74,63 @@ export const HomePage: React.FC = () => {
         </section>
       )}
 
-      {/* Minimized Single-Row Categories & Filter Bar (Expandable on Click) */}
+      {/* Minimized Single-Row Categories & Filter Bar (Expandable on Click, Evenly Filled) */}
       {siteConfig.showHomeCategoriesSection && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="surface-glass-card rounded-2xl p-3 sm:p-4 bg-white space-y-3">
-            {/* Minimized Row */}
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                <button
-                  type="button"
-                  onClick={() => setFiltersExpanded(!filtersExpanded)}
-                  className="btn-glass-primary px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 cursor-pointer"
-                >
-                  <SlidersHorizontal className="w-3.5 h-3.5" />
-                  <span>{ siteConfig.homeCategoriesTitle || 'Categories & Filters' }</span>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 transition-transform ${
-                      filtersExpanded ? 'rotate-180' : ''
-                    }`}
-                  />
-                </button>
+            {/* Minimized Single Row — Evenly Positioned */}
+            <div className="grid grid-cols-2 lg:flex items-center justify-between gap-2.5 w-full">
+              <button
+                type="button"
+                onClick={() => setFiltersExpanded(!filtersExpanded)}
+                className="btn-glass-primary px-3.5 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" />
+                <span>
+                  {filtersExpanded
+                    ? 'Minimize Categories'
+                    : `${siteConfig.homeCategoriesTitle || 'Categories'} (${serviceCategories.length})`}
+                </span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 shrink-0 transition-transform ${
+                    filtersExpanded ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
 
-                {/* Quick inline preview pills (first 3) when collapsed */}
-                {!filtersExpanded &&
-                  serviceCategories.slice(0, 3).map((cat) => (
-                    <button
-                      key={cat.name}
-                      onClick={() =>
-                        navigateTo('marketplace', { category: cat.name as ServiceVertical })
-                      }
-                      className="btn-glass-light px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <CategoryIconSvg category={cat.name} className="w-3.5 h-3.5 text-sky-700" />
-                      <span>{cat.name}</span>
-                    </button>
-                  ))}
+              {/* Desktop inline quick category buttons */}
+              <div className="hidden lg:flex items-center justify-center gap-2 flex-1">
+                {serviceCategories.slice(0, 4).map((cat) => (
+                  <button
+                    key={cat.name}
+                    onClick={() =>
+                      navigateTo('marketplace', { category: cat.name as ServiceVertical })
+                    }
+                    className="btn-glass-light flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+                  >
+                    <CategoryIconSvg category={cat.name} className="w-3.5 h-3.5 text-sky-700 shrink-0" />
+                    <span>{cat.name}</span>
+                  </button>
+                ))}
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setFiltersExpanded(!filtersExpanded)}
-                  className="btn-glass-light px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer"
-                >
-                  <span>{filtersExpanded ? 'Minimize' : `Expand (${serviceCategories.length})`}</span>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 transition-transform ${
-                      filtersExpanded ? 'rotate-180' : ''
-                    }`}
-                  />
-                </button>
-                <button
-                  onClick={() => navigateTo('marketplace')}
-                  className="btn-glass-light px-3 py-1.5 rounded-xl text-xs font-bold hidden sm:flex items-center gap-1 cursor-pointer"
-                >
-                  <span>All Offers</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-sky-700" />
-                </button>
-              </div>
+              <button
+                onClick={() => navigateTo('marketplace')}
+                className="btn-glass-light px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+              >
+                <span>All Offers ({listings.length})</span>
+                <ArrowRight className="w-3.5 h-3.5 text-sky-700 shrink-0" />
+              </button>
             </div>
 
-            {/* Expanded Categories & Filters Panel */}
+            {/* Expanded Categories & Filters Panel — Even Rows */}
             {filtersExpanded && (
-              <div className="pt-3 border-t border-sky-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-                {serviceCategories.map((cat) => {
+              <div className="pt-3 border-t border-sky-100 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {serviceCategories.map((cat, idx) => {
                   const count = getCategoryCount(cat.name);
                   const isSelected = selectedCategory === cat.name;
+                  const isLastOddMobile =
+                    serviceCategories.length % 2 === 1 && idx === serviceCategories.length - 1;
                   return (
                     <button
                       key={cat.name}
@@ -145,18 +138,18 @@ export const HomePage: React.FC = () => {
                         setSelectedCategory(cat.name as ServiceVertical);
                         navigateTo('marketplace', { category: cat.name as ServiceVertical });
                       }}
-                      className={`p-3 rounded-xl text-left flex items-center justify-between gap-2.5 cursor-pointer ${
+                      className={`p-3 rounded-xl text-left flex items-center justify-between gap-2 cursor-pointer ${
                         isSelected ? 'btn-glass-primary' : 'btn-glass-light'
-                      }`}
+                      } ${isLastOddMobile ? 'col-span-2 sm:col-span-1' : ''}`}
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
                         {siteConfig.showCategoryIcons && (
                           <div className="w-7 h-7 rounded-lg bg-white border border-sky-200 flex items-center justify-center text-sky-700 shrink-0">
                             <CategoryIconSvg category={cat.name} className="w-3.5 h-3.5" />
                           </div>
                         )}
                         <div className="min-w-0">
-                          <div className="font-extrabold text-xs text-slate-900 leading-snug">
+                          <div className="font-extrabold text-xs text-slate-900 leading-snug truncate">
                             {cat.name}
                           </div>
                           <div className="text-[10px] font-mono text-sky-800">
@@ -177,7 +170,7 @@ export const HomePage: React.FC = () => {
       {/* Section 2: Supported Games (Rendered cleanly when games exist) */}
       {siteConfig.showHomeGamesSection && games.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2">
             <h2 className="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900">
               {siteConfig.homeGamesTitle || 'Games'}
             </h2>
@@ -238,26 +231,26 @@ export const HomePage: React.FC = () => {
       {/* Section 3: Live Marketplace Listings */}
       {siteConfig.showHomeListingsSection && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900">
+          <div className="flex items-center justify-between gap-2 w-full">
+            <h2 className="text-base sm:text-xl font-extrabold tracking-tight text-slate-900 truncate">
               {siteConfig.homeListingsTitle || 'Marketplace Listings'}
             </h2>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {siteConfig.allowNewListings && (
                 <button
                   onClick={() => navigateTo('dashboard')}
-                  className="btn-glass-primary px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                  className="btn-glass-primary px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-3.5 h-3.5 shrink-0" />
                   <span>Sell</span>
                 </button>
               )}
               <button
                 onClick={() => navigateTo('marketplace')}
-                className="btn-glass-light px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                className="btn-glass-light px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
               >
                 <span>View All ({listings.length})</span>
-                <ArrowRight className="w-3.5 h-3.5 text-sky-700" />
+                <ArrowRight className="w-3.5 h-3.5 text-sky-700 shrink-0" />
               </button>
             </div>
           </div>
